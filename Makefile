@@ -51,7 +51,7 @@ dist:
 
 .PHONY: test
 test: smlexpose Makefile
-	$(MAKE) -C tests test
+	$(MAKE) -C test test
 
 .PHONY: clean
 clean: Makefile
@@ -59,4 +59,4 @@ clean: Makefile
 	find . -name 'MLB' | xargs rm -rf
 	find . -name 'run' | xargs rm -f
 	rm -f smlexpose src/version.sml
-	$(MAKE) -C tests clean
+	$(MAKE) -C test clean
