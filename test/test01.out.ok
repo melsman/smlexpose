@@ -1,0 +1,10 @@
+[Reading file: test01.sig]
+File lexed:
+ signature SERVICES = sig type res val a : res val b : ( res * ( res , u ) t * res , int ) x * 'a -> ( ( e -> P.r ) -> 'a ) end
+Parsing tokens...
+Parsing tokens done...
+Parse success:
+ signature SERVICES = sig type  res
+val a : res
+val b : ((((res*(res,u) t*res),int) x*'a)) -> ((e) -> P.r) -> 'a
+ end

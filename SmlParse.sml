@@ -57,13 +57,29 @@ fun p_symb nil = NO (Region.botloc,fn()=>"reached end-of-file")
 
    specs ::= spec < specs >
 
-   spec ::= TYPE tyvarseq tycon
+   spec ::= TYPE < tyvarseq > tycon < EQ ty >
           | VAL vid COLON ty
+*)
+
+(* Some parser utilities *)
+
+fun p_seq p xs = (((p oo (fn x => [x])) ??? (eat L.Comma ->> (p_seq p)))
+                      (fn (xs1,xs2,r) => xs1@xs2)) xs
+fun p_pseq p xs = ((eat L.Lpar ->> (p_seq p)) >>- (eat L.Rpar)) xs
+
+fun p_pseq_or_single p xs = (p_pseq p || (p oo (fn x => [x]))) xs
+
+(* Type variable sequences:
 
    tyvarseq ::= tyvar
               | LPAR tyvars RPAR
 
    tyvars ::= tyvar < COMMA tyvars >
+*)
+
+fun p_tyvarseq tvs = p_pseq_or_single p_tv tvs
+
+(* Types:
 
    ty ::= ty1 -> ty1 | ty1
 
@@ -80,13 +96,10 @@ fun p_symb nil = NO (Region.botloc,fn()=>"reached end-of-file")
    tycons ::= tycon < tycons >
 
    lty ::= lab COLON ty < COMMA lty >
-
 *)
 
 fun p_ty ts =
     ((p_ty1 ??? (eat L.Arrow ->> p_ty)) Arr) ts
-
-(*    ((((p_ty1 >>- eat L.Arrow) >>> p_ty1) oor (fn ((t1,t2),r) => Arr(t1,t2,r))) || p_ty1) ts *)
 
 and p_ty1 ts =
     let fun p_tys ts =
@@ -96,15 +109,13 @@ and p_ty1 ts =
     end ts
 
 and p_ty2 ts =
-    let fun p_tys ts = (((p_ty oo (fn t => [t])) ??? (eat L.Comma ->> p_tys))
-                            (fn (ts1,ts2,r) => ts1@ts2)) ts
-        fun p_ptys ts = ((eat L.Lpar ->> p_tys) >>- (eat L.Rpar)) ts
+    let fun p_ptys ts = p_pseq p_ty ts
         fun p_tycons ts =
             (((p_tycon oor (fn (t,r) => [(t,r)])) ?? p_tycons) (op@)) ts
         fun build t nil = t
           | build t ((tc,r)::tcs) = build (Tc([t],tc,r)) tcs
-    in ((p_ptys >>> p_tycon) oor (fn ((ts,tc),r) => Tc(ts,tc,r)))
-    || ((p_ty3 ?? p_tycons) (fn (t,tycons) => build t tycons))
+    in ((p_ty3 ?? p_tycons) (fn (t,tycons) => build t tycons))
+    || ((p_ptys >>> p_tycon) oor (fn ((ts,tc),r) => Tc(ts,tc,r)))
     end ts
 
 and p_ty3 ts =
@@ -113,8 +124,13 @@ and p_ty3 ts =
      ((eat L.Lpar ->> p_ty) >>- (eat L.Rpar))) ts
 
 fun p_spec ts =
-    let val p_tspec = (eat L.Type ->> p_tycon)
-                          oor (fn (tc,r) => TypeSpec([],tc,NONE,r))
+    let val p_tspec1 = (eat L.Type ->> p_tycon)
+                           oor (fn (tc,r) => ([],tc,NONE,r))
+        val p_tspec2 = ((eat L.Type ->> p_tyvarseq) >>> p_tycon)
+                           oor (fn ((tvs,tc),r) => (tvs,tc,NONE,r))
+        val p_tspec = ((p_tspec1 || p_tspec2) ?? (eat L.Eq ->> p_ty))
+                                             (fn ((tvs,tc,_,r),ty) => (tvs,tc,SOME ty,r))
+        val p_tspec = p_tspec oo TypeSpec
         val p_vspec = ((eat L.Val ->> p_vid) >>> (eat L.Colon ->> p_ty))
                           oor (fn ((vid,ty),r) => ValSpec(vid,ty,r))
     in ((p_tspec || p_vspec) ??? p_spec) (fn (s1,s2,r) => SeqSpec(s1,s2))

@@ -1,0 +1,8 @@
+[Reading file: test0.sig]
+File lexed:
+ signature SERVICES = sig type res end
+Parsing tokens...
+Parsing tokens done...
+Parse success:
+ signature SERVICES = sig type  res
+ end
