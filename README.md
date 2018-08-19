@@ -8,7 +8,7 @@ exposed functions. Here is an example demonstrating the exposure of a
 `quotes` function for obtaining stock quotes for a specific stock
 ticker (e.g., AAPL):
 
-````
+````sml
 signature SERVICES = sig
   type 'a res
   type ('a,'b) fcn  (* ~ 'a -> 'b *)
@@ -37,3 +37,27 @@ be integrated in the SMLserver and SMLtoJs build projects:
   definining the empty signature. The file can be used as an SMLserver
   script that exposes the functionality available in the structure
   `ServerServices : SERVICES` on the server.
+
+## Generating the `ServiceDefs.sml` file
+
+Generating the file `ServiceDefs.sml` is done by passing the `-d` option to `smlexpose`:
+
+````
+$ smlexpose -d SERVICE.sig > ServiceDefs.sml
+````
+
+## Generating the `ClientServices.sml` file
+
+Generating the file `ClientServices.sml` is done by passing the `-c` option to `smlexpose`:
+
+````
+$ smlexpose -c SERVICE.sig > ClientServices.sml
+````
+
+## Generating the `ServerExposure.sml` file
+
+Generating the file `ServerExposure.sml` is done by passing the `-s` option to `smlexpose`:
+
+````
+$ smlexpose -s SERVICE.sig > ServerExposure.sml
+````
