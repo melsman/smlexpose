@@ -8,7 +8,7 @@ exposed functions. Here is an example demonstrating the exposure of a
 `quotes` function for obtaining stock quotes for a specific stock
 ticker (e.g., AAPL):
 
-````sml
+````ocaml
 signature SERVICES = sig
   type 'a res
   type ('a,'b) fcn  (* ~ 'a -> 'b *)
