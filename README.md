@@ -158,7 +158,7 @@ signature WEB = sig
   val request : unit -> {method:string,data:string}
   val reply   : string -> unit
 end
-```
+````
 
 It should be fairly simple to construct an appropriate SMLserver
 structure that matches this signature.
