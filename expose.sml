@@ -278,13 +278,14 @@ fun gen_client_services {flags:flags,file:string,sigdec:S.sigdec} =
 (* -------------------- *)
 
 fun template_server_expose body = String.concatWith "\n" [
-    "functor ServerExpose(structure P : PICKLE",
+    "functor ServerExpose(structure Pickle : PICKLE",
     "                     structure Web : WEB",
     "                     structure Services: SERVICES where type 'a res = 'a",
     "                                                    and type ('a,'b) fcn = 'a -> 'b",
     "                    ) : sig val exposeServices: unit -> unit",
     "                        end =",
     "struct",
+    "  structure P = Pickle",
     "  structure ServiceDefs = ServiceDefs(P)",
     "",
     "  fun wrap (sd : ('a,'b)ServiceDefs.fcn) (f:'a -> 'b) : string -> string =",

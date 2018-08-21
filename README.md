@@ -27,16 +27,22 @@ be integrated in the SMLserver and SMLtoJs build projects:
   defines how argument values and result values are serialised and
   deserialised in terms of serialisation picklers.
 
-- `ClientServices.sml`: This generated file contains a structure to be
+- `ClientServices.sml`: This generated file contains a
+  `ClientServices` functor that takes as argument a `Pickle`
+  structure, an `Async` structure, matching the `ASYNC` signature, and
+  an `url` address for the server entry point. The functor returns a structure to be
   used in the SMLtoJs context. The structure matches the `SERVICES`
   signature with the `'a res` type specified to of type `'a
   Async.Deferred.t`, which allows for asyncronous communication
   between the client and the server.
 
-- `ServerExposure.sml`: This generated file contains a structure
-  definining the empty signature. The file can be used as an SMLserver
-  script that exposes the functionality available in the structure
-  `ServerServices : SERVICES` on the server.
+- `ServerExpose.sml`: This generated file contains a `ServerExpose`
+  functor that takes as argument a `Pickle` structure, a `Web`
+  structure, and a `Services` structure that implements the `SERVICES`
+  signature. The functor returns a structure that contains a single
+  variable declaration `exposeServices: unit -> unit`.  The function
+  can be used in an SMLserver script that exposes the functionality
+  available in the structure `Services : SERVICES` on the server.
 
 ## Generating the `ServiceDefs.sml` file
 
