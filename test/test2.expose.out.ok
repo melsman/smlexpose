@@ -1,0 +1,12 @@
+[Reading file: test2.expose.sig]
+File lexed:
+ signature SERVICES = sig type 'a res type ( 'a , 'b ) fcn type ticker = string type isodate = string val quotes : ( ticker , { date : isodate , eod : real , avg : real } list res ) fcn end
+Parsing tokens...
+Parsing tokens done...
+Parse success:
+ signature SERVICES = sig type 'a res
+type ('a,'b) fcn
+type  ticker = string
+type  isodate = string
+val quotes : (ticker,{date:isodate,eod:real,avg:real} list res) fcn
+ end
