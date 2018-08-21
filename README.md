@@ -14,7 +14,7 @@ signature SERVICES = sig
   type ('a,'b) fcn  (* ~ 'a -> 'b *)
   type ticker = string
   type isodate = string
-  val quotes : (ticker, (isodate * real) list res) fcn
+  val quotes : (ticker, {date:isodate,eod:real,avg:real} list res) fcn
 end
 ````
 
@@ -52,6 +52,27 @@ Generating the file `ServiceDefs.sml` is done by passing the `-d` option to `sml
 $ smlexpose -d SERVICE.sig > ServiceDefs.sml
 ````
 
+Here is the content (slightly prettified) of the generated file:
+
+````sml
+functor ServiceDefs (P:PICKLE) : SERVICES where type 'a res = 'a
+                                            and type ('a,'b) fcn = {method:string,
+                                                                    arg:'a P.pu,
+                                                                    res:'b P.pu} =
+struct
+  type 'a res = 'a
+  type ('a,'b) fcn = {method:string,arg:'a P.pu,res:'b P.pu}
+  type ticker = string
+  type isodate = string
+  val quotes =
+    {method="quotes",
+     arg=P.string,
+     res=P.listGen (P.convert0(fn (date,(eod,avg)) => {date=date,eod=eod,avg=avg},
+                               fn {date,eod,avg} => (date,(eod,avg)))
+			       (P.pairGen0(P.string,P.pairGen0(P.real,P.real))))}
+end
+````
+
 ## Generating the `ClientServices.sml` file
 
 Generating the file `ClientServices.sml` is done by passing the `-c` option to `smlexpose`:
@@ -60,10 +81,84 @@ Generating the file `ClientServices.sml` is done by passing the `-c` option to `
 $ smlexpose -c SERVICE.sig > ClientServices.sml
 ````
 
-## Generating the `ServerExposure.sml` file
+Here is the content of the generated file:
 
-Generating the file `ServerExposure.sml` is done by passing the `-s` option to `smlexpose`:
+````sml
+functor ClientServices (structure P : PICKLE
+                        structure Async : ASYNC
+                        val url : string
+                         ): SERVICES where type 'a res = 'a Async.Deferred.t
+                                     and type ('a,'b)fcn = 'a -> 'b =
+struct
+  structure ServiceDefs = ServiceDefs(P)
+  structure Deferred = Async.Deferred
+  type 'a res = 'a Deferred.t
+  type ('a,'b) fcn = 'a -> 'b
+
+  fun mk_service (sd: ('a,'b)ServiceDefs.fcn) : ('a,'b res)fcn =
+      let val {method,arg,res} = sd
+          val op >>= = Deferred.Infix.>>= infix >>=
+       in fn a =>
+              Async.delay (fn () => P.pickle arg a) >>= (fn body =>
+              Async.httpRequest {binary=true,
+                                 method=method,
+                                 url=url,
+                                 headers=[],
+                                 body=SOME body} >>= (fn r =>
+              Async.delay (fn () => P.unpickle res r)))
+      end
+
+  (* services *)
+  type ticker = string
+  type isodate = string
+  val quotes = mk_service ServiceDefs.quotes
+end
+````
+
+## Generating the `ServerExpose.sml` file
+
+Generating the file `ServerExpose.sml` is done by passing the `-s` option to `smlexpose`:
 
 ````
-$ smlexpose -s SERVICE.sig > ServerExposure.sml
+$ smlexpose -s SERVICE.sig > ServerExpose.sml
 ````
+
+Here is the content of the generated file:
+
+````sml
+functor ServerExpose(structure Pickle : PICKLE
+                     structure Web : WEB
+                     structure Services: SERVICES where type 'a res = 'a
+                                                    and type ('a,'b) fcn = 'a -> 'b
+                    ) : sig val exposeServices: unit -> unit
+                        end =
+struct
+  structure P = Pickle
+  structure ServiceDefs = ServiceDefs(P)
+
+  fun wrap (sd : ('a,'b)ServiceDefs.fcn) (f:'a -> 'b) : string -> string =
+      P.pickle (#res sd) o f o P.unpickle (#arg sd)
+
+  fun exposeServices () =
+      let val {method,data,...} = Web.request()
+          val f : string -> string =
+              case method of
+                "quotes" => wrap ServiceDefs.quotes Services.quotes |
+                _ => raise Fail ("unknown service: " ^ method)
+      in Web.reply(f data)
+      end
+end
+````
+
+The `exposeServices` function should be called in an SMLserver
+script. The Web structure should match the following signature:
+
+````sml
+signature WEB = sig
+  val request : unit -> {method:string,data:string}
+  val reply   : string -> unit
+end
+```
+
+It should be fairly simple to construct an appropriate SMLserver
+structure that matches this signature.

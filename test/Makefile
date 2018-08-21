@@ -12,7 +12,7 @@ test: $(RESFILES)
 
 .PHONY: clean
 clean:
-	rm -rf *~ *.out *.res *.defs.sml *.client_defs.sml *.server_defs.sml *.defs.mlb *.client.mlb *.server.mlb *.exe
+	rm -rf *~ *.out *.res *.defs.sml *.defs.mlb *.client.mlb *.server.mlb *.exe *.client.sml *.server.sml
 	find . -name 'MLB' | xargs rm -rf
 
 # -----------------

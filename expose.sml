@@ -221,8 +221,6 @@ fun template_client_services body = String.concatWith "\n" [
     "  structure Deferred = Async.Deferred",
     "  type 'a res = 'a Deferred.t",
     "  type ('a,'b) fcn = 'a -> 'b",
-    "  type ticker = string",
-    "  type isodate = string",
     "",
     "  fun mk_service (sd: ('a,'b)ServiceDefs.fcn) : ('a,'b res)fcn =",
     "      let val {method,arg,res} = sd",
@@ -251,7 +249,10 @@ fun pp_client_service (Vid(vid,r)) =
      SOME("  val " ^ vid ^ " = mk_service ServiceDefs." ^ vid))
   | pp_client_service (Typ(tvs,tc,SOME ty,r)) =
     (assert (tc <> "res" andalso tc <> "fcn") r "res and fcn must be abstract";
-     SOME(String.concat("  type " :: S.pr_tvs tvs :: " " :: tc :: " = " :: S.pr_ty ty nil)))
+     let val tvs = S.pr_tvs tvs
+         val tvs = if tvs <> "" then tvs ^ " " else tvs
+     in SOME(String.concat("  type " :: tvs :: tc :: " = " :: S.pr_ty ty nil))
+     end)
   | pp_client_service (Typ(tvs,tc,NONE,r)) =
     (assert (tc = "res" orelse tc = "fcn") r "only res and fcn may be abstract";
      NONE)
