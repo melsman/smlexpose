@@ -114,14 +114,20 @@ and p_ty2 ts =
             (((p_tycon oor (fn (t,r) => [(t,r)])) ?? p_tycons) (op@)) ts
         fun build t nil = t
           | build t ((tc,r)::tcs) = build (Tc([t],tc,r)) tcs
-    in ((p_ty3 ?? p_tycons) (fn (t,tycons) => build t tycons))
-    || ((p_ptys >>> p_tycon) oor (fn ((ts,tc),r) => Tc(ts,tc,r)))
+    in ((p_ty3 ?? p_tycons) (fn (t,tcs) => build t tcs))
+    || ((p_ptys >>> p_tycons) oo (fn (ts,(tc,r)::tcs) => build (Tc(ts,tc,r)) tcs
+                                   | _ => raise Fail "p_ty2.impossible"))
     end ts
 
 and p_ty3 ts =
     ((p_tv oor Tv) ||
      (p_tycon oor (fn (tc,r) => Tc(nil,tc,r))) ||
+     (((eat L.Lbra ->> p_lts) >>- (eat L.Rbra)) oor (fn (lts,r) => Rec(lts,r))) ||
      ((eat L.Lpar ->> p_ty) >>- (eat L.Rpar))) ts
+
+and p_lts ts = (p_seq p_lt) ts
+and p_lt ts = ((p_id >>- eat L.Colon) >>> p_ty) ts
+
 
 fun p_spec ts =
     let val p_tspec1 = (eat L.Type ->> p_tycon)

@@ -26,13 +26,13 @@ datatype sigexp = Sig of spec * reg
 
 datatype sigdec = Sigdec of sigid * sigexp * reg
 
-fun pr_seq sep pr nil acc = acc
-  | pr_seq sep pr [e] acc = pr e :: acc
-  | pr_seq sep pr es acc = "(" :: String.concatWith sep (List.map pr es) :: ")" :: acc
+fun pr_seq left right sep pr nil acc = acc
+  | pr_seq left right sep pr [e] acc = pr e :: acc
+  | pr_seq left right sep pr es acc = left :: String.concatWith sep (List.map pr es) :: right :: acc
 
-fun pr_tvs tvs = String.concat(pr_seq "," (fn x => x) tvs nil)
+fun pr_tvs tvs = String.concat(pr_seq "(" ")" "," (fn x => x) tvs nil)
 
-fun pr_tys sep tys acc = pr_seq sep (fn ty => String.concat(pr_ty ty [])) tys acc
+fun pr_tys sep tys acc = pr_seq "(" ")" sep (fn ty => String.concat(pr_ty ty [])) tys acc
 and pr_ty ty acc =
     case ty of
         Tv(tv,_) => tv :: acc
@@ -40,7 +40,7 @@ and pr_ty ty acc =
       | Tc(tys,tc,_) => pr_tys "," tys (" " :: tc :: acc)
       | Arr(t1,t2,_) => "(" :: pr_ty t1 (") -> " :: pr_ty t2 acc)
       | Tup(tys,r) => pr_tys "*" tys acc
-      | _ => raise Fail "pr_ty"
+      | Rec(lts,r) => pr_seq "{" "}" "," (fn (l,t) => String.concat (l::":"::pr_ty t [])) lts acc
 
 fun pr_spec (TypeSpec(tvs,tc,NONE,r)) acc =
     "type " :: pr_tvs tvs :: " " :: tc :: "\n" :: acc

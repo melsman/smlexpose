@@ -5,7 +5,8 @@ fun die s = raise Fail ("SMLexpose." ^ s)
 fun parseFile (flags : Flags.flags) (f : string) : unit =
     let val verbose_p = Flags.flag_p flags "-v"
         val silent_p = Flags.flag_p flags "-silent"
-        val _ = Util.log (not silent_p) (fn _ => "[Reading file: " ^ f ^ "]")
+        fun msg f = Util.log (not silent_p) f
+        val _ = msg (fn _ => "[Reading file: " ^ f ^ "]")
         val s = Util.readFile f
         val ts = SmlLex.lex f s
         val _ = Util.log verbose_p (fn _ => "File lexed:")
@@ -14,7 +15,17 @@ fun parseFile (flags : Flags.flags) (f : string) : unit =
         val sd = SmlParse.parse ts
         val _ = Util.log verbose_p (fn _ => "Parsing tokens done...")
         val _ = Util.log verbose_p (fn _ => "Parse success:\n " ^ SmlAst.pr_sigdec sd)
-    in ()
+        val out = if Flags.flag_p flags "-d" then
+                    (msg (fn _ => "[Generating ServiceDefs structure]");
+                     Expose.gen_service_defs {flags=flags,file=f,sigdec=sd})
+                  else if Flags.flag_p flags "-c" then
+                    (msg (fn _ => "[Generating ClientServices structure]");
+                     Expose.gen_client_services {flags=flags,file=f,sigdec=sd})
+                  else if Flags.flag_p flags "-s" then
+                    (msg (fn _ => "[Generating ServerExposer structure]");
+                     Expose.gen_server_exposer {flags=flags,file=f,sigdec=sd})
+                  else ""
+    in print out
     end
 
 fun errHandler (e : exn) : unit =
@@ -45,9 +56,11 @@ fun version() =
 fun usage() =
     version() ^ "\n\n" ^
     "Usage: " ^ name ^ " [OPTIONS]... file.sig\n" ^
-    " -c file        : write client structure \n" ^
-    " -s file        : write SMLserver exposer file\n" ^
-    " -d file        : write common Defs file\n"
+    " -c      : print client structure \n" ^
+    " -s      : print SMLserver exposer file\n" ^
+    " -d      : print common Defs file\n" ^
+    " -v      : verbose mode\n" ^
+    " -silent : only print SML code\n"
 
 (* Parse command line arguments and pass to compileAndRun *)
 val () = Flags.runargs {usage = usage,

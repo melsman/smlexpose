@@ -1,0 +1,12 @@
+(* Copyright, Martin Elsman 2003-2014, MIT Licence *)
+local
+  $(SML_LIB)/basis/basis.mlb
+  ../polyhash/polyhash.mlb
+  eqhashdyn2.sml
+  bitstream.sig
+  bitstream.sml
+  bytestream.sml
+in
+  pickle.sig
+  pickle.sml
+end

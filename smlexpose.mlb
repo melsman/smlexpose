@@ -12,5 +12,6 @@ in
    SML_PARSE.sig
    SmlParse.sml
    version.sml
+   expose.sml
    Main.sml
 end

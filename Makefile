@@ -1,8 +1,8 @@
-MLCOMP ?= mlkit
+MLCOMP ?= mlkit -quot
 
 FILES=flags.sml flags.mlb util.sig util.sml util.mlb \
   PARSE_COMB.sig ParseComb.sml REGION.sig Region.sig \
-  SmlLex.sml SmlAst.sml SML_PARSE.sig SmlParse.sml Main.sml
+  SmlLex.sml SmlAst.sml SML_PARSE.sig SmlParse.sml expose.sml Main.sml
 
 PREFIX ?= .
 DESTDIR ?= $(PREFIX)/dist
