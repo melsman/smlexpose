@@ -1,3 +1,5 @@
+(* Copyright 2018, Martin Elsman, MIT-license *)
+
 structure Expose :
           sig
             type flags = Flags.flags
@@ -9,10 +11,29 @@ struct
 
 structure S = SmlAst
 
+(* ---------------------- *)
+(* Utilities              *)
+(* ---------------------- *)
+
 fun err r s =
     raise Fail ("Error at : " ^ Region.pp r ^ ": " ^ s)
 
 fun assert b r s = if b then () else err r s
+
+type flags = Flags.flags
+
+infix ==>
+fun a ==> b = not a orelse b
+
+fun mapi f xs =
+    let fun g n nil = nil
+          | g n (x::xs) = f(n,x)::g (n+1) xs
+    in g 0 xs
+    end
+
+(* ---------------------- *)
+(* Service Definitions    *)
+(* ---------------------- *)
 
 type env = (S.tc*(S.tv list*S.ty option))list
 fun lookup E tc = Util.lookupAlist E tc
@@ -51,20 +72,12 @@ fun fmt_service_def {method,arg,res} =
     String.concat ["  val ", method, " =\n    {method=", method, ",\n     arg=", arg,
                    ",\n     res=",res, "}"]
 
-type flags = Flags.flags
-
 fun rec_tup_iso lts =
     let fun f [] = "()"
           | f [(l,_)] = l
           | f ((l1,_)::(l2,t2)::lts) = "(" ^ l1 ^ "," ^ f ((l2,t2)::lts) ^ ")"
     in ("fn " ^ f lts ^ " => {" ^ String.concatWith "," (map (fn (l,_) => l^"="^l) lts) ^ "}",
         "fn {" ^ String.concatWith "," (map #1 lts) ^ "} => " ^ f lts)
-    end
-
-fun mapi f xs =
-    let fun g n nil = nil
-          | g n (x::xs) = f(n,x)::g (n+1) xs
-    in g 0 xs
     end
 
 fun tup_tup_iso ts =
@@ -129,12 +142,11 @@ fun pickle ty =
     end
 
 fun template_service_defs body = String.concatWith "\n" [
-"structure ServiceDefs :> SERVICES where type 'a res = 'a",
-"                                    and type ('a,'b) fcn = {method:string,",
-"                                                            arg:'a Pickle.pu,",
-"                                                            res:'b Pickle.pu} =",
+"functor ServiceDefs (P:PICKLE) : SERVICES where type 'a res = 'a",
+"                                            and type ('a,'b) fcn = {method:string,",
+"                                                                    arg:'a P.pu,",
+"                                                                    res:'b P.pu} =",
 "struct",
-"structure P = Pickle",
 body,
 "end\n"
 ]
@@ -154,9 +166,6 @@ fun pp_service_def sd =
                        "    {method=\"",method,"\",\n",
                        "     arg=", arg, ",\n",
                        "     res=", res, "}"]
-
-infix ==>
-fun a ==> b = not a orelse b
 
 fun gen_service_defs {flags:flags,file:string,sigdec:S.sigdec} =
     let fun g_spec (E:env, S.TypeSpec(tvs,tc,SOME ty,r)) : env * service_def list =
@@ -197,10 +206,110 @@ fun gen_service_defs {flags:flags,file:string,sigdec:S.sigdec} =
     in template_service_defs body
     end
 
+(* ---------------------- *)
+(* ClientServices functor *)
+(* ---------------------- *)
+
+fun template_client_services body = String.concatWith "\n" [
+    "functor ClientServices (structure P : PICKLE",
+    "                        structure Async : ASYNC",
+    "                        val url : string",
+    "	                      ): SERVICES where type 'a res = 'a Async.Deferred.t",
+    "                                     and type ('a,'b)fcn = 'a -> 'b =",
+    "struct",
+    "  structure ServiceDefs = ServiceDefs(P)",
+    "  structure Deferred = Async.Deferred",
+    "  type 'a res = 'a Deferred.t",
+    "  type ('a,'b) fcn = 'a -> 'b",
+    "  type ticker = string",
+    "  type isodate = string",
+    "",
+    "  fun mk_service (sd: ('a,'b)ServiceDefs.fcn) : ('a,'b res)fcn =",
+    "      let val {method,arg,res} = sd",
+    "          val op >>= = Deferred.Infix.>>= infix >>=",
+    "       in fn a =>",
+    "              Async.delay (fn () => P.pickle arg a) >>= (fn body =>",
+    "              Async.httpRequest {binary=true,",
+    "                                 method=method,",
+    "                                 url=url,",
+    "                                 headers=[],",
+    "                                 body=SOME body} >>= (fn r =>",
+    "              Async.delay (fn () => P.unpickle res r)))",
+    "      end",
+    "",
+    "  (* services *)",
+    body,
+    "end",
+    ""
+    ]
+
+datatype entry = Vid of S.vid*Region.reg
+               | Typ of S.tv list * S.tc * S.ty option * Region.reg
+
+fun pp_client_service (Vid(vid,r)) =
+    (assert (vid <> "mk_service") r "service cannot be named 'mk_service'";
+     SOME("  val " ^ vid ^ " = mk_service ServiceDefs." ^ vid))
+  | pp_client_service (Typ(tvs,tc,SOME ty,r)) =
+    (assert (tc <> "res" andalso tc <> "fcn") r "res and fcn must be abstract";
+     SOME(String.concat("  type " :: S.pr_tvs tvs :: " " :: tc :: " = " :: S.pr_ty ty nil)))
+  | pp_client_service (Typ(tvs,tc,NONE,r)) =
+    (assert (tc = "res" orelse tc = "fcn") r "only res and fcn may be abstract";
+     NONE)
+
+fun services (sigdec: S.sigdec) : entry list =
+    let fun g_spec (S.TypeSpec x,acc) = Typ x :: acc
+          | g_spec (S.ValSpec(vid,_,r),acc) = Vid(vid,r) :: acc
+          | g_spec (S.SeqSpec(s1,s2),acc) = g_spec(s1,g_spec (s2,acc))
+        fun g_sigexp (S.Sig(spec,r)) = g_spec (spec,nil)
+        fun g_sigdec (S.Sigdec(sigid,sigexp,r)) =
+            (assert (sigid = "SERVICES") r "expecting signature id SERVICES";
+             g_sigexp sigexp)
+    in g_sigdec sigdec
+    end
+
 fun gen_client_services {flags:flags,file:string,sigdec:S.sigdec} =
-    raise Fail "Expose: gen_client_services not implemented"
+    let val entries = services sigdec
+        val body = String.concatWith "\n" (List.mapPartial pp_client_service entries)
+    in template_client_services body
+    end
+
+(* -------------------- *)
+(* ServerExpose functor *)
+(* -------------------- *)
+
+fun template_server_expose body = String.concatWith "\n" [
+    "functor ServerExpose(structure P : PICKLE",
+    "                     structure Web : WEB",
+    "                     structure Services: SERVICES where type 'a res = 'a",
+    "                                                    and type ('a,'b) fcn = 'a -> 'b",
+    "                    ) : sig val exposeServices: unit -> unit",
+    "                        end =",
+    "struct",
+    "  structure ServiceDefs = ServiceDefs(P)",
+    "",
+    "  fun wrap (sd : ('a,'b)ServiceDefs.fcn) (f:'a -> 'b) : string -> string =",
+    "      P.pickle (#res sd) o f o P.unpickle (#arg sd)",
+    "",
+    "  fun exposeServices () =",
+    "      let val {method,data,...} = Web.request()",
+    "          val f : string -> string =",
+    "              case method of",
+    body,
+    "                _ => raise Fail (\"unknown service: \" ^ method)",
+    "      in Web.reply(f data)",
+    "      end",
+    "end",
+    ""
+    ]
+
+fun pp_server_expose (vid,r) =
+    "                \"" ^ vid ^ "\" => wrap ServiceDefs." ^ vid ^ " Services." ^ vid ^ " |"
 
 fun gen_server_exposer {flags:flags,file:string,sigdec:S.sigdec} =
-    raise Fail "Expose: gen_server_exposer not implemented"
+    let val entries = services sigdec
+        val vids = List.mapPartial (fn Vid x => SOME x | _ => NONE) entries
+        val body = String.concatWith "\n" (map pp_server_expose vids)
+    in template_server_expose body
+    end
 
 end

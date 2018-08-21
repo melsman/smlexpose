@@ -1,3 +1,5 @@
+(* Copyright 2018, Martin Elsman, MIT-license *)
+
 structure SmlLex = struct
 
 datatype token = Signature | Sig | Type | And | Val | End | Lpar |

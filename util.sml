@@ -1,3 +1,4 @@
+(* Copyright 2018, Martin Elsman, MIT-license *)
 
 structure Util :> UTIL = struct
 
@@ -35,10 +36,10 @@ fun realToString inf d =
     if d < 0.0 then "-" ^ realToString inf (~d)
     else
       if Real.==(d,Real.posInf) then inf
-      else 
+      else
         let val s = Real.toString d
-            val s = String.translate (fn #"~" => "-" 
-                                     | #"E" => "e" 
+            val s = String.translate (fn #"~" => "-"
+                                     | #"E" => "e"
                                      | c => String.str c) s
         in if CharVector.exists (fn c => c = #".") s then s
            else if CharVector.exists (fn c => c = #"e") s then s
@@ -49,7 +50,7 @@ fun realToCString d = realToString "HUGE_VAL" d
 fun realToTailString d = realToString "inf" d
 
 (* Add quotes around a string *)
-fun quote s = "'" ^ s ^ "'" 
+fun quote s = "'" ^ s ^ "'"
 
 fun prln s = print(s ^ "\n")
 fun log verbose f = if verbose then prln(f()) else ()

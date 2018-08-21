@@ -1,8 +1,0 @@
-[Reading file: test03.sig]
-File lexed:
- signature SERVICES = sig val x : ( real * real ) t t end
-Parsing tokens...
-Parsing tokens done...
-Parse success:
- signature SERVICES = sig val x : (real*real) t t
- end

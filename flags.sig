@@ -1,15 +1,17 @@
+(* Copyright 2018, Martin Elsman, MIT-license *)
+
 (** Module for parsing commandline argument flags and invoking a general
     run function.
 *)
 
 signature FLAGS = sig
   type flags = (string * string option) list
-                                        
+
   val flag_p : flags -> string -> bool
   val flag   : flags -> string -> string option
-                                         
+
   val runargs : {unaries: string list,
-                 usage: unit -> string, 
+                 usage: unit -> string,
                  run: flags * string list -> unit} -> unit
 end
 

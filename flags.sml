@@ -1,4 +1,6 @@
-structure Flags :> FLAGS = 
+(* Copyright 2018, Martin Elsman, MIT-license *)
+
+structure Flags :> FLAGS =
 struct
 
 type flags = (string * string option) list
@@ -25,8 +27,8 @@ fun runargs {unaries: string list,
                 if List.exists (fn x => x = opt) unaries then
                   loop rest ((opt,SOME arg)::acc)
                 else if isFlag opt then loop (arg::rest) ((opt,NONE)::acc)
-                else run(rev acc, args) 
-              | f :: rest => 
+                else run(rev acc, args)
+              | f :: rest =>
                 if isFlag f then loop rest ((f,NONE)::acc)
                 else run(rev acc, args)
               | nil => (print(usage () ^ "\n"); OS.Process.exit OS.Process.success)

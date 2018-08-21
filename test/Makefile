@@ -1,12 +1,5 @@
 TESTFILES=$(shell ls -1 *.sig)
-OUTFILES=$(TESTFILES:%.sig=%.out)
-RESFILES=$(TESTFILES:%.sig=%.res)
-
-EXPOSE_TESTFILES=$(shell ls -1 *.expose.sig)
-EXPOSE_SMLFILES=$(EXPOSE_TESTFILES:%.sig=%.sml)
-EXPOSE_MLBFILES=$(EXPOSE_TESTFILES:%.sig=%.mlb)
-EXPOSE_EXEFILES=$(EXPOSE_TESTFILES:%.sig=%.exe)
-
+RESFILES=$(TESTFILES:%.sig=%.parse.res) $(TESTFILES:%.sig=%.client.res) $(TESTFILES:%.sig=%.defs.res) $(TESTFILES:%.sig=%.server.res)
 
 .PHONY: test
 test: $(RESFILES)
@@ -17,39 +10,87 @@ test: $(RESFILES)
 	@echo "-------------------------------------"
 	@exit `grep "ERR" $(RESFILES) | wc -l`
 
-.PHONY: test_expose
-test_expose: $(EXPOSE_SMLFILES) $(EXPOSE_MLBFILES) $(EXPOSE_EXEFILES)
-
 .PHONY: clean
 clean:
-	rm -rf *~ *.out *.res $(EXPOSE_SMLFILES) $(EXPOSE_MLBFILES) *.exe
+	rm -rf *~ *.out *.res *.defs.sml *.client_defs.sml *.server_defs.sml *.defs.mlb *.client.mlb *.server.mlb *.exe
 	find . -name 'MLB' | xargs rm -rf
 
-%.out: %.sig
+# -----------------
+# PARSING
+# -----------------
+
+%.parse.out: %.sig
 	../smlexpose -v $< > $@
 
-%.expose.sml: %.expose.sig
+%.parse.res: %.parse.out
+	@(diff -aq $< $<.ok > /dev/null 2>&1; \
+         if [ $$? -eq 0 ]; then \
+             echo "Test $<: OK" > $@ \
+         ; else \
+             if [ -e $<.ok ]; then \
+                echo "Test $<: *** ERR: file $< differs from $<.ok ***" > $@ \
+             ; else \
+                echo "Test $<: *** ERR: file $<.ok does not exist ***" > $@ \
+             ; fi \
+         ; fi)
+
+# -----------------
+# SERVICE DEFS
+# -----------------
+
+%.defs.sml: %.sig
 	../smlexpose -silent -d $< > $@
 
-%.expose.mlb: %.expose.sml
+%.defs.mlb: %.defs.sml
 	@echo 'local $$XSML_LIBY/basis/basis.mlb' | sed -e 's/X/(/g' | sed -e 's/Y/)/g' > $@
-	@echo '      pickle/pickle.mlb' >> $@
+	@echo '      pickle/pickle.sig' >> $@
 	@echo in >> $@
-	@echo $*.expose.sig >> $@
+	@echo $*.sig >> $@
 	@echo $< >> $@
 	@echo end >> $@
 
-%.expose.exe: %.expose.mlb
-	mlkit -o $@ $<
+%.defs.res: %.defs.mlb
+	@echo "Test $<: ERR" > $@
+	-(mlkit -o $*.defs.exe $< && ./$*.defs.exe > /dev/null && echo "Test $<: OK" > $@)
 
-%.res: %.out
-	@(diff -aq $< $<.ok > /dev/null 2>&1; \
-         if [ $$? -eq 0 ]; then \
-             echo "Test $*.sig: OK" > $@ \
-         ; else \
-             if [ -e $<.ok ]; then \
-                echo "Test $*.sig: *** ERR: file $< differs from $<.ok ***" > $@ \
-             ; else \
-                echo "Test $*.sig: *** ERR: file $<.ok does not exist ***" > $@ \
-             ; fi \
-         ; fi)
+# -----------------
+# CLIENT
+# -----------------
+
+%.client.sml: %.sig
+	../smlexpose -silent -c $< > $@
+
+%.client.mlb: %.defs.sml %.client.sml
+	@echo 'local $$XSML_LIBY/basis/basis.mlb' | sed -e 's/X/(/g' | sed -e 's/Y/)/g' > $@
+	@echo '      pickle/pickle.sig' >> $@
+	@echo '      async/deferred.sig' >> $@
+	@echo '      async/async.sig' >> $@
+	@echo in >> $@
+	@echo $*.sig >> $@
+	@echo $^ >> $@
+	@echo end >> $@
+
+%.client.res: %.client.mlb
+	@echo "Test $<: ERR" > $@
+	-(mlkit -o $*.client.exe $< && ./$*.client.exe > /dev/null && echo "Test $<: OK" > $@)
+
+
+# -----------------
+# SERVER
+# -----------------
+
+%.server.sml: %.sig
+	../smlexpose -silent -s $< > $@
+
+%.server.mlb: %.defs.sml %.server.sml
+	@echo 'local $$XSML_LIBY/basis/basis.mlb' | sed -e 's/X/(/g' | sed -e 's/Y/)/g' > $@
+	@echo '      pickle/pickle.sig' >> $@
+	@echo '      web/web.sig' >> $@
+	@echo in >> $@
+	@echo $*.sig >> $@
+	@echo $^ >> $@
+	@echo end >> $@
+
+%.server.res: %.server.mlb
+	@echo "Test $<: ERR" > $@
+	-(mlkit -o $*.server.exe $< && ./$*.server.exe > /dev/null && echo "Test $<: OK" > $@)

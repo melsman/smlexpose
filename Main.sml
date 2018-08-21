@@ -1,3 +1,4 @@
+(* Copyright 2018, Martin Elsman, MIT-license *)
 
 fun die s = raise Fail ("SMLexpose." ^ s)
 

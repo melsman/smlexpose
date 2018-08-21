@@ -1,3 +1,5 @@
+(* Copyright 2018, Martin Elsman, MIT-license *)
+
 local
   $(SML_LIB)/basis/basis.mlb
 in

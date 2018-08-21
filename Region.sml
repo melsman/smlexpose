@@ -1,10 +1,12 @@
+(* Copyright 2018, Martin Elsman, MIT-license *)
+
 structure Region :> REGION = struct
   type filename = string
   type loc = int * int * filename
   type reg = loc * loc
   val botloc = (0,0,"")
   fun loc0 f = (1,0,f)
-  fun newline l = 
+  fun newline l =
       if l = botloc then
         raise Fail "Region.newline: botloc is not a real location"
       else (#1 l + 1,0,#3 l)

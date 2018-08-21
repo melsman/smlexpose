@@ -1,3 +1,5 @@
+(* Copyright 2018, Martin Elsman, MIT-license *)
+
 structure SmlParse : SML_PARSE = struct
 
 val p_debug = false

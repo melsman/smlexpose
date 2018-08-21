@@ -1,3 +1,5 @@
+(* Copyright 2018, Martin Elsman, MIT-license *)
+
 (** Utility library for general purpose small useful function. *)
 
 signature UTIL = sig

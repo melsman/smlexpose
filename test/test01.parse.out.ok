@@ -1,0 +1,11 @@
+[Reading file: test01.sig]
+File lexed:
+ signature SERVICES = sig type 'a res type ( 'b , 'a ) fcn val a : ( unit , int res ) fcn val b : ( bool * ( bool * word ) list * real , int res ) fcn end
+Parsing tokens...
+Parsing tokens done...
+Parse success:
+ signature SERVICES = sig type 'a res
+type ('b,'a) fcn
+val a : (unit,int res) fcn
+val b : ((bool*(bool*word) list*real),int res) fcn
+ end

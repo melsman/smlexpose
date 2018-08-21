@@ -6,4 +6,6 @@ signature SERVICES = sig
   type ticker = string
   type isodate = string
   val quotes : (ticker, (isodate * real) list res) fcn
+
+  val allquotes : (unit, {symbol:ticker,date:isodate,eod:real} list res) fcn
 end

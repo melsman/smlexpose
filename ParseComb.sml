@@ -1,3 +1,5 @@
+(* Copyright 2018, Martin Elsman, MIT-license *)
+
 functor ParseComb(eqtype token
                   val pr_token : token -> string) : PARSE_COMB = struct
 type loc = Region.loc
@@ -52,7 +54,7 @@ fun p1 ??? p2 = fn f => fn ts =>
     case p1 ts of
         OK(v1,r1,ts) =>
         (case p2 ts of
-             OK(v2,r2,ts) => 
+             OK(v2,r2,ts) =>
              let val r = Region.plus "???" r1 r2
              in OK(f(v1,v2,r), r, ts)
              end
@@ -83,9 +85,9 @@ fun p oor f = fn ts =>
 
 fun eat t ts =
     case ts of
-      nil => NO (Region.botloc,fn() => ("expecting token " ^ pr_token t ^ 
+      nil => NO (Region.botloc,fn() => ("expecting token " ^ pr_token t ^
                                         " but reached end-of-file"))
     | (t',r:Region.reg)::ts' => if t=t' then OK ((),r,ts')
-                                else NO (#1 r,fn()=> ("expecting token " ^ pr_token t ^ 
+                                else NO (#1 r,fn()=> ("expecting token " ^ pr_token t ^
                                                       " but found token " ^ pr_token t'))
 end

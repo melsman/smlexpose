@@ -1,7 +1,8 @@
 (* A Service file *)
 
 signature SERVICES = sig
-  type res
-  val a : res
-  val b : (res * (res,u) t * res, int)x * 'a -> ((e -> P.r) -> 'a)
+  type 'a res
+  type ('b,'a) fcn
+  val a : (unit,int res)fcn
+  val b : (bool * (bool*word) list * real, int res)fcn
 end

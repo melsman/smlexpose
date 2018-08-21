@@ -1,3 +1,5 @@
+(* Copyright 2018, Martin Elsman, MIT-license *)
+
 signature REGION = sig
   type filename = string
   type loc = int * int * filename
@@ -8,14 +10,14 @@ signature REGION = sig
   val newline : loc -> loc
   val next    : loc -> loc
   val lt      : loc -> loc -> bool
-  val wf      : reg -> bool                      
-  val ppLoc   : loc -> string      
+  val wf      : reg -> bool
+  val ppLoc   : loc -> string
   val pp      : reg -> string
   val plus    : string -> reg -> reg -> reg
 end
 
 
-(* 
+(*
 
 botloc
     end of file

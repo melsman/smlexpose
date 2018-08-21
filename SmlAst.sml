@@ -1,3 +1,4 @@
+(* Copyright 2018, Martin Elsman, MIT-license *)
 
 structure SmlAst = struct
 

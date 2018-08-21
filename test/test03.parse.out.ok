@@ -1,0 +1,11 @@
+[Reading file: test03.sig]
+File lexed:
+ signature SERVICES = sig type 'a res type ( 'a , 'b ) fcn type 'a t = 'a val x : ( ( real * real ) t t , int res ) fcn end
+Parsing tokens...
+Parsing tokens done...
+Parse success:
+ signature SERVICES = sig type 'a res
+type ('a,'b) fcn
+type 'a t = 'a
+val x : ((real*real) t t,int res) fcn
+ end
