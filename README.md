@@ -49,7 +49,7 @@ be integrated in the SMLserver and SMLtoJs build projects:
 Generating the file `ServiceDefs.sml` is done by passing the `-d` option to `smlexpose`:
 
 ````
-$ smlexpose -d SERVICE.sig > ServiceDefs.sml
+$ smlexpose -d SERVICES.sig > ServiceDefs.sml
 ````
 
 Here is the content (slightly prettified) of the generated file:
@@ -78,7 +78,7 @@ end
 Generating the file `ClientServices.sml` is done by passing the `-c` option to `smlexpose`:
 
 ````
-$ smlexpose -c SERVICE.sig > ClientServices.sml
+$ smlexpose -c SERVICES.sig > ClientServices.sml
 ````
 
 Here is the content of the generated file:
@@ -120,7 +120,7 @@ end
 Generating the file `ServerExpose.sml` is done by passing the `-s` option to `smlexpose`:
 
 ````
-$ smlexpose -s SERVICE.sig > ServerExpose.sml
+$ smlexpose -s SERVICES.sig > ServerExpose.sml
 ````
 
 Here is the content of the generated file:
