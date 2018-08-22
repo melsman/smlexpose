@@ -165,7 +165,7 @@ structure that matches this signature.
 
 ## Building and Testing
 
-The build and test SMLexpose, simply execute the following commands in
+To build and test SMLexpose, simply execute the following commands in
 a terminal:
 
 ````
