@@ -162,3 +162,23 @@ end
 
 It should be fairly simple to construct an appropriate SMLserver
 structure that matches this signature.
+
+## Building and Testing
+
+The build and test SMLexpose, simply execute the following commands in
+a terminal:
+
+````
+$ make
+$ make test
+````
+
+The test will, for a number of `SERVICES` signatures, type check (and
+compile) the generated modules against interfaces for pickling
+(`test/pickle/pickle.sig`), SMLtoJs asynchronous client-server
+communication (`test/async/async.sig`), and SMLserver integration
+(`test/web/web.sig`).
+
+## License
+
+MIT license.
