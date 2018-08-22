@@ -58,6 +58,7 @@ fun lexChar c =
       | #"|" => SOME Pipe
       | #"'" => SOME Pling
       | #">" => SOME Gt
+      | #"_" => SOME Underscore
       | #"\n" => SOME Newline
       | c => if Char.isDigit c then SOME(Digit c)
              else if Char.isAlpha c then SOME(Letter c)
