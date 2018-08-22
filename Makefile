@@ -1,7 +1,7 @@
 MLCOMP ?= mlkit -quot
 
 FILES=flags.sml flags.mlb util.sig util.sml util.mlb \
-  PARSE_COMB.sig ParseComb.sml REGION.sig Region.sig \
+  PARSE_COMB.sig ParseComb.sml REGION.sig Region.sml \
   SmlLex.sml SmlAst.sml SML_PARSE.sig SmlParse.sml expose.sml Main.sml
 
 PREFIX ?= .
