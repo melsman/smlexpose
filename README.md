@@ -68,7 +68,9 @@ struct
   val quotes =
     {id="quotes",
      arg=P.string,
-     res=P.listGen (P.convert0(fn (date,(eod,avg)) => {date=date,eod=eod,avg=avg},fn {date,eod,avg} => (date,(eod,avg)))(P.pairGen0(P.string,P.pairGen0(P.real,P.real))))}
+     res=P.listGen (P.convert0(fn (date,(eod,avg)) => {date=date,eod=eod,avg=avg},
+                               fn {date,eod,avg} => (date,(eod,avg)))
+			      (P.pairGen0(P.string,P.pairGen0(P.real,P.real))))}
 end
 ````
 
