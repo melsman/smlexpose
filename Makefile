@@ -12,7 +12,7 @@ PLATFORM := $(shell uname -pmrs)
 all: smlexpose
 
 BIN_PREFIX ?= /usr/local
-BINDIR=$(DESTDIR)${BIN_PREFIX}bin
+BINDIR=$(DESTDIR)${BIN_PREFIX}/bin
 
 .PHONY: install
 install: smlexpose
