@@ -1,11 +1,8 @@
-MLCOMP ?= mlkit -quot
+MLCOMP ?= mlkit
 
 FILES=flags.sml flags.mlb util.sig util.sml util.mlb \
   PARSE_COMB.sig ParseComb.sml REGION.sig Region.sml \
   SmlLex.sml SmlAst.sml SML_PARSE.sig SmlParse.sml expose.sml Main.sml
-
-PREFIX ?= .
-DESTDIR ?= $(PREFIX)/dist
 
 GIT_VERSION := $(shell git --no-pager describe --tags --always --dirty)
 GIT_DATE := $(firstword $(shell git --no-pager show --date=short --format="%ad" --name-only))
@@ -13,6 +10,13 @@ PLATFORM := $(shell uname -pmrs)
 
 .PHONY: all
 all: smlexpose
+
+BIN_PREFIX ?= /usr/local
+BINDIR=$(DESTDIR)$(BIN_PREFIX})bin
+
+.PHONY: install
+install: smlexpose
+	cp -p $< $(BINDIR)/
 
 # Use temp file src/version~ to ensure regeneration of src/version.sml
 # whenever (and only when) the git version changes...
@@ -30,10 +34,6 @@ version.sml: version~
 
 smlexpose: smlexpose.mlb $(FILES) version.sml
 	$(MLCOMP) -output $@ $<
-
-.PHONY: install
-install:
-	cp -p smlexpose $(DESTDIR)/bin/
 
 DISTPOSTFIX?=linux
 DISTNAME=smlexpose-$(DISTPOSTFIX)
