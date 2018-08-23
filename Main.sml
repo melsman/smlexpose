@@ -2,6 +2,14 @@
 
 fun die s = raise Fail ("SMLexpose." ^ s)
 
+val disclaimer = String.concatWith "\n"
+["(*** DO NOT ALTER THIS FILE DIRECTLY!                ***)",
+ "(*** This file was auto-generated using SMLexpose.   ***)",
+ "(*** Please see https://github.com/melsman/smlexpose ***)",
+ "(*** for details.                                    ***)",
+ ""
+]
+
 (* Parsing *)
 fun parseFile (flags : Flags.flags) (f : string) : unit =
     let val verbose_p = Flags.flag_p flags "-v"
@@ -26,6 +34,7 @@ fun parseFile (flags : Flags.flags) (f : string) : unit =
                     (msg (fn _ => "[Generating ServerExposer structure]");
                      Expose.gen_server_exposer {flags=flags,file=f,sigdec=sd})
                   else ""
+        val out = if out = "" then out else disclaimer ^ "\n" ^ out
     in print out
     end
 
