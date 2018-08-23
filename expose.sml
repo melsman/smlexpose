@@ -68,10 +68,6 @@ fun rea E ty =
       | S.Arr(t1,t2,r) => S.Arr(rea E t1,rea E t2,r)
       | S.Tup(ts,r) => S.Tup(map(rea E)ts,r)
 
-fun fmt_service_def {method,arg,res} =
-    String.concat ["  val ", method, " =\n    {method=", method, ",\n     arg=", arg,
-                   ",\n     res=",res, "}"]
-
 fun rec_tup_iso lts =
     let fun f [] = "()"
           | f [(l,_)] = l
@@ -352,7 +348,7 @@ fun template_server_expose_struct body = String.concatWith "\n" [
     "  structure Services : SERVICES where type 'a res = 'a",
     "                                  and type ('a,'b) fcn = 'a -> 'b = Services",
     "  structure ServiceDefs : SERVICES where type 'a res = 'a",
-    "                                     and type ('a,'b) fcn = {method:string,",
+    "                                     and type ('a,'b) fcn = {id:string,",
     "                                                             arg:'a P.pu,",
     "                                                             res:'b P.pu} = ServiceDefs",
     "",
