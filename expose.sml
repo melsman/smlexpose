@@ -99,6 +99,7 @@ fun pickle ty =
               | S.Tc ([],"string",_) => "P.string"::acc
               | S.Tc ([],"char",_) => "P.char"::acc
               | S.Tc ([],"real",_) => "P.real"::acc
+              | S.Tc ([],"Time.time",_) => "P.time"::acc
               | S.Tc ([],"unit",_) => "P.unit"::acc
               | S.Tc ([ty],"list",_) => "P.listGen (" :: p ty (")"::acc)
               | S.Tc ([ty],"option",_) => "P.optionGen (" :: p ty (")"::acc)
