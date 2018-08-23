@@ -71,10 +71,11 @@ fun usage() =
      " -d      : print common Defs file",
      " -v      : verbose mode",
      " -struct : generate structures instead of functors",
-     " -silent : only print SML code"
+     " -silent : only print SML code",
+     " -url s  : (partial) url for client request"
     ]
 
 (* Parse command line arguments and pass to compileAndRun *)
 val () = Flags.runargs {usage = usage,
                         run = run,
-                        unaries = []}
+                        unaries = ["-url"]}

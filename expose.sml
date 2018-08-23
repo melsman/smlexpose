@@ -143,7 +143,7 @@ fun pickle ty =
 
 fun template_service_defs_funct body = String.concatWith "\n" [
 "functor ServiceDefs (P:PICKLE) : SERVICES where type 'a res = 'a",
-"                                            and type ('a,'b) fcn = {method:string,",
+"                                            and type ('a,'b) fcn = {id:string,",
 "                                                                    arg:'a P.pu,",
 "                                                                    res:'b P.pu} =",
 "struct",
@@ -153,7 +153,7 @@ body,
 
 fun template_service_defs_struct body = String.concatWith "\n" [
 "structure ServiceDefs : SERVICES where type 'a res = 'a",
-"                                   and type ('a,'b) fcn = {method:string,",
+"                                   and type ('a,'b) fcn = {id:string,",
 "                                                           arg:'a Pickle.pu,",
 "                                                           res:'b Pickle.pu} =",
 "struct",
@@ -163,7 +163,7 @@ body,
 ]
 
 datatype service_def = TypeDef of {tc:string,tvs:string list,ty:string}
-                     | ValDef of {method:string,arg:string,res:string}
+                     | ValDef of {id:string,arg:string,res:string}
 
 fun pp_service_def sd =
     case sd of
@@ -172,9 +172,9 @@ fun pp_service_def sd =
             val tvs = if tvs = "" then "" else tvs ^ " "
         in String.concat ["  type ",tvs, tc, " = ", ty]
         end
-      | ValDef {method,arg,res} =>
-        String.concat ["  val ",method," = \n",
-                       "    {method=\"",method,"\",\n",
+      | ValDef {id,arg,res} =>
+        String.concat ["  val ",id," = \n",
+                       "    {id=\"",id,"\",\n",
                        "     arg=", arg, ",\n",
                        "     res=", res, "}"]
 
@@ -190,7 +190,7 @@ fun gen_service_defs {flags:flags,file:string,sigdec:S.sigdec} =
              assert (tc = "fcn" ==> lookup E "fcn" = NONE) r "type constructor 'fcn' already defined";
              let val sd = if tc = "res" then TypeDef{tc=tc,tvs=["'a"],ty="'a"}
                           else if tc = "fcn" then TypeDef{tc=tc,tvs=["'a","'b"],
-                                                          ty="{method:string,arg:'a P.pu,res:'b P.pu}"}
+                                                          ty="{id:string,arg:'a P.pu,res:'b P.pu}"}
                           else err r "only type constructors 'fcn' and 'res' may be abstract"
              in ([(tc,(tvs,NONE))], [sd])
              end)
@@ -199,7 +199,7 @@ fun gen_service_defs {flags:flags,file:string,sigdec:S.sigdec} =
                  S.Tc([arg,S.Tc([res],tc_res,r_res)],tc,r) =>
                  (assert (tc = "fcn") r "a service must be of type 'fcn'";
                   assert (tc_res = "res") r "the second parameter to 'fcn' must be a 'res' type";
-                  let val sd = ValDef{method=vid,arg=pickle (rea E arg),res=pickle (rea E res)}
+                  let val sd = ValDef{id=vid,arg=pickle (rea E arg),res=pickle (rea E res)}
                   in ([],[sd])
                   end)
                | _ => err r "a service must be of type 'fcn' with the second parameter a 'res' type")
@@ -223,33 +223,47 @@ fun gen_service_defs {flags:flags,file:string,sigdec:S.sigdec} =
 (* ClientServices functor *)
 (* ---------------------- *)
 
-fun template_client_services body = String.concatWith "\n" [
-    "functor ClientServices (structure P : PICKLE",
-    "                        structure Async : ASYNC",
-    "                        val url : string",
-    "	                      ): SERVICES where type 'a res = 'a Async.Deferred.t",
-    "                                     and type ('a,'b)fcn = 'a -> 'b =",
-    "struct",
-    "  structure ServiceDefs = ServiceDefs(P)",
+fun template_client_services url body = String.concatWith "\n" [
     "  structure Deferred = Async.Deferred",
     "  type 'a res = 'a Deferred.t",
     "  type ('a,'b) fcn = 'a -> 'b",
     "",
+    "  val url = \"" ^ url ^ "\"",
+    "",
     "  fun mk_service (sd: ('a,'b)ServiceDefs.fcn) : ('a,'b res)fcn =",
-    "      let val {method,arg,res} = sd",
+    "      let val {id,arg,res} = sd",
     "          val op >>= = Deferred.Infix.>>= infix >>=",
     "       in fn a =>",
     "              Async.delay (fn () => P.pickle arg a) >>= (fn body =>",
     "              Async.httpRequest {binary=true,",
-    "                                 method=method,",
+    "                                 method=\"POST\",",
     "                                 url=url,",
-    "                                 headers=[],",
+    "                                 headers=[(\"SML-serviceid\",id)],",
     "                                 body=SOME body} >>= (fn r =>",
     "              Async.delay (fn () => P.unpickle res r)))",
     "      end",
     "",
     "  (* services *)",
-    body,
+    body
+    ]
+
+fun template_client_services_funct url body = String.concatWith "\n" [
+    "functor ClientServices (structure P : PICKLE",
+    "                        structure Async : ASYNC",
+    "	                    ): SERVICES where type 'a res = 'a Async.Deferred.t",
+    "                                     and type ('a,'b)fcn = 'a -> 'b =",
+    "struct",
+    "  structure ServiceDefs = ServiceDefs(P)",
+    template_client_services url body,
+    "end",
+    ""
+    ]
+
+fun template_client_services_struct url body = String.concatWith "\n" [
+    "structure ClientServices : SERVICES where type 'a res = 'a Async.Deferred.t",
+    "                                      and type ('a,'b)fcn = 'a -> 'b =",
+    "struct",
+    template_client_services url body,
     "end",
     ""
     ]
@@ -284,7 +298,12 @@ fun services (sigdec: S.sigdec) : entry list =
 fun gen_client_services {flags:flags,file:string,sigdec:S.sigdec} =
     let val entries = services sigdec
         val body = String.concatWith "\n" (List.mapPartial pp_client_service entries)
-    in template_client_services body
+        val url = case Flags.flag flags "-url" of
+                      SOME url => url
+                    | NONE => raise Fail "-url option is required for generating client code"
+        val struct_p = Flags.flag_p flags "-struct"
+    in if struct_p then template_client_services_struct url body
+       else template_client_services_funct url body
     end
 
 (* -------------------- *)
@@ -297,14 +316,14 @@ fun template_server_expose body = String.concatWith "\n" [
     "",
     "  fun exposeServices () =",
     "      let val headers = Web.Conn.headers()",
-    "          val method = case Web.Set.iget(headers,\"SML-method\") of",
-    "                          NONE => raise Fail (\"ServerExpose: No SML-method header set\")",
-    "                        | SOME m => m",
+    "          val id = case Web.Set.iget(headers,\"SML-serviceid\") of",
+    "                       NONE => raise Fail (\"ServerExpose: No SML-serviceid header set\")",
+    "                     | SOME id => id",
     "          val data = Web.Conn.getRequestData()",
     "          val f : string -> string =",
-    "              case method of",
+    "              case id of",
     body,
-    "                _ => raise Fail (\"ServerExpose: Unknown service: \" ^ method)",
+    "                _ => raise Fail (\"ServerExpose: Unknown service: \" ^ id)",
     "      in Web.Conn.returnBinary(f data)",
     "      end"
     ]

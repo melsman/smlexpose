@@ -58,7 +58,7 @@ clean:
 # -----------------
 
 %.client.sml: %.sig
-	../smlexpose -silent -c $< > $@
+	../smlexpose -silent -c -url "some_url" $< > $@
 
 %.client.mlb: %.defs.sml %.client.sml
 	@echo 'local $$XSML_LIBY/basis/basis.mlb' | sed -e 's/X/(/g' | sed -e 's/Y/)/g' > $@
