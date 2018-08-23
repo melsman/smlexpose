@@ -292,16 +292,6 @@ fun gen_client_services {flags:flags,file:string,sigdec:S.sigdec} =
 (* -------------------- *)
 
 fun template_server_expose body = String.concatWith "\n" [
-    "functor ServerExpose(structure Pickle : PICKLE",
-    "                     structure Web : WEB",
-    "                     structure Services: SERVICES where type 'a res = 'a",
-    "                                                    and type ('a,'b) fcn = 'a -> 'b",
-    "                    ) : sig val exposeServices: unit -> unit",
-    "                        end =",
-    "struct",
-    "  structure P = Pickle",
-    "  structure ServiceDefs = ServiceDefs(P)",
-    "",
     "  fun wrap (sd : ('a,'b)ServiceDefs.fcn) (f:'a -> 'b) : string -> string =",
     "      P.pickle (#res sd) o f o P.unpickle (#arg sd)",
     "",
@@ -312,10 +302,42 @@ fun template_server_expose body = String.concatWith "\n" [
     body,
     "                _ => raise Fail (\"unknown service: \" ^ method)",
     "      in Web.reply(f data)",
-    "      end",
+    "      end"
+    ]
+
+fun template_server_expose_funct body = String.concatWith "\n" [
+    "functor ServerExpose(structure Pickle : PICKLE",
+    "                     structure Web : WEB",
+    "                     structure Services: SERVICES where type 'a res = 'a",
+    "                                                    and type ('a,'b) fcn = 'a -> 'b",
+    "                    ) : sig val exposeServices: unit -> unit",
+    "                        end =",
+    "struct",
+    "  structure P = Pickle",
+    "  structure ServiceDefs = ServiceDefs(P)",
+    "",
+    template_server_expose body,
     "end",
     ""
     ]
+
+fun template_server_expose_struct body = String.concatWith "\n" [
+    "structure ServerExpose : sig val exposeServices: unit -> unit",
+    "                         end =",
+    "struct",
+    "  structure P : PICKLE = Pickle",
+    "  structure Services : SERVICES where type 'a res = 'a",
+    "                                  and type ('a,'b) fcn = 'a -> 'b = Services",
+    "  structure ServiceDefs : SERVICES where type 'a res = 'a",
+    "                                     and type ('a,'b) fcn = {method:string,",
+    "                                                             arg:'a P.pu,",
+    "                                                             res:'b P.pu} = ServiceDefs",
+    "",
+    template_server_expose body,
+    "end",
+    ""
+    ]
+
 
 fun pp_server_expose (vid,r) =
     "                \"" ^ vid ^ "\" => wrap ServiceDefs." ^ vid ^ " Services." ^ vid ^ " |"
@@ -324,7 +346,9 @@ fun gen_server_exposer {flags:flags,file:string,sigdec:S.sigdec} =
     let val entries = services sigdec
         val vids = List.mapPartial (fn Vid x => SOME x | _ => NONE) entries
         val body = String.concatWith "\n" (map pp_server_expose vids)
-    in template_server_expose body
+        val struct_p = Flags.flag_p flags "-struct"
+    in if struct_p then template_server_expose_struct body
+       else template_server_expose_funct body
     end
 
 end
