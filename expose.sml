@@ -259,6 +259,7 @@ fun template_client_services_struct url body = String.concatWith "\n" [
     "structure ClientServices : SERVICES where type 'a res = 'a Async.Deferred.t",
     "                                      and type ('a,'b)fcn = 'a -> 'b =",
     "struct",
+    "  structure P = Pickle",
     template_client_services url body,
     "end",
     ""
