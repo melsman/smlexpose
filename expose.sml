@@ -296,12 +296,16 @@ fun template_server_expose body = String.concatWith "\n" [
     "      P.pickle (#res sd) o f o P.unpickle (#arg sd)",
     "",
     "  fun exposeServices () =",
-    "      let val {method,data,...} = Web.request()",
+    "      let val headers = Web.Conn.headers()",
+    "          val method = case Web.Set.iget(headers,\"SML-method\") of",
+    "                          NONE => raise Fail (\"ServerExpose: No SML-method header set\")",
+    "                        | SOME m => m",
+    "          val data = Web.Conn.getRequestData()",
     "          val f : string -> string =",
     "              case method of",
     body,
-    "                _ => raise Fail (\"unknown service: \" ^ method)",
-    "      in Web.reply(f data)",
+    "                _ => raise Fail (\"ServerExpose: Unknown service: \" ^ method)",
+    "      in Web.Conn.returnBinary(f data)",
     "      end"
     ]
 
