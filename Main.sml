@@ -46,8 +46,6 @@ fun run (flags,[f]) =
     end
   | run _ = die "expects only one file"
 
-val name = CommandLine.name()
-
 fun version() =
     String.concatWith "\n"
                       ["SMLexpose version: " ^ Version.version,
@@ -55,13 +53,17 @@ fun version() =
                        "Platform: " ^ Version.platform]
 
 fun usage() =
-    version() ^ "\n\n" ^
-    "Usage: " ^ name ^ " [OPTIONS]... file.sig\n" ^
-    " -c      : print client structure \n" ^
-    " -s      : print SMLserver exposer file\n" ^
-    " -d      : print common Defs file\n" ^
-    " -v      : verbose mode\n" ^
-    " -silent : only print SML code\n"
+    String.concatWith "\n"
+    [version(),
+     "",
+     "Usage: " ^ CommandLine.name() ^ " [OPTIONS]... file.sig",
+     " -c      : print client structure",
+     " -s      : print SMLserver exposer file",
+     " -d      : print common Defs file",
+     " -v      : verbose mode",
+     " -struct : generate structures instead of functors",
+     " -silent : only print SML code"
+    ]
 
 (* Parse command line arguments and pass to compileAndRun *)
 val () = Flags.runargs {usage = usage,

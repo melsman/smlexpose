@@ -141,12 +141,23 @@ fun pickle ty =
     in String.concat(p ty nil)
     end
 
-fun template_service_defs body = String.concatWith "\n" [
+fun template_service_defs_funct body = String.concatWith "\n" [
 "functor ServiceDefs (P:PICKLE) : SERVICES where type 'a res = 'a",
 "                                            and type ('a,'b) fcn = {method:string,",
 "                                                                    arg:'a P.pu,",
 "                                                                    res:'b P.pu} =",
 "struct",
+body,
+"end\n"
+]
+
+fun template_service_defs_struct body = String.concatWith "\n" [
+"structure ServiceDefs : SERVICES where type 'a res = 'a",
+"                                   and type ('a,'b) fcn = {method:string,",
+"                                                           arg:'a Pickle.pu,",
+"                                                           res:'b Pickle.pu} =",
+"struct",
+"  structure P = Pickle",
 body,
 "end\n"
 ]
@@ -203,7 +214,9 @@ fun gen_service_defs {flags:flags,file:string,sigdec:S.sigdec} =
              g_sigexp sigexp)
         val (_, xs) = g_sigdec sigdec
         val body = String.concatWith "\n" (map pp_service_def xs)
-    in template_service_defs body
+        val struct_p = Flags.flag_p flags "-struct"
+    in if struct_p then template_service_defs_struct body
+       else template_service_defs_funct body
     end
 
 (* ---------------------- *)
