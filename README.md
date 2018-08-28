@@ -118,7 +118,7 @@ struct
 end
 ````
 
-## Generating the functor `ServerExpose` file
+## Generating the functor `ServerExpose`
 
 Generating the functor `ServerExpose` is done by passing the `-s` option to `smlexpose`:
 
